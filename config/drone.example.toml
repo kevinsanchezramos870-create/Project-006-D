@@ -1,0 +1,68 @@
+# Project 006-D configuration. Copy to config/drone.toml (git-ignored) and edit.
+# Every value has a safe default in src/project006/config.py - only list what you change.
+
+[vehicle]
+# Onboard Pi (through mavlink-router): "tcp:127.0.0.1:5760"
+# Ground PC over Wi-Fi/SiK:            "udpin:0.0.0.0:14551"
+# ArduPilot SITL (sim_vehicle.py):     "udpin:127.0.0.1:14551"
+connection = "tcp:127.0.0.1:5760"
+drone_id = 1            # must match MAV_SYSID on this drone's flight controller
+
+[safety]
+fence_radius_m = 100.0  # keep smaller than FENCE_RADIUS (150) in the .param file
+min_alt_m = 2.0
+max_alt_m = 60.0
+max_speed_m_s = 8.0
+arrival_tolerance_m = 0.75
+move_timeout_s = 60.0
+min_separation_m = 4.0
+
+[camera]
+width = 640
+height = 360
+hfov_deg = 66.0         # Camera Module 3 standard lens; Wide = 102 x 67
+vfov_deg = 41.0
+tilt_from_nadir_deg = 0.0   # 0 = looking straight down, top of image toward the nose
+record_dir = "~/flights"
+
+[tracking]
+# OpenCV HSV (H 0-179). Default = red (two ranges because red wraps around 0).
+hsv_ranges = [[[0, 120, 70], [10, 255, 255]], [[170, 120, 70], [179, 255, 255]]]
+min_area_px = 150
+follow_gain = 0.5
+follow_max_speed_m_s = 2.0
+follow_min_alt_m = 4.0
+
+[swarm]
+udp_port = 5005
+key_env = "P006_SWARM_KEY"     # name of the env var holding the shared secret
+max_packet_age_s = 2.0
+
+# One entry per drone. alt_m = its private altitude layer (keep >= 2 m apart,
+# and set RTL_ALT_M on that drone to a matching layer).
+[[swarm.drones]]
+id = 1
+connection = "udpin:0.0.0.0:14551"
+offset_ne = [0.0, 0.0]
+alt_m = 8.0
+
+[[swarm.drones]]
+id = 2
+connection = "udpin:0.0.0.0:14552"
+offset_ne = [-5.0, -5.0]
+alt_m = 11.0
+
+[[swarm.drones]]
+id = 3
+connection = "udpin:0.0.0.0:14553"
+offset_ne = [-5.0, 5.0]
+alt_m = 14.0
+
+[guard]
+min_satellites = 8
+max_position_jump_m = 15.0    # m/s of apparent movement that counts as a GPS "teleport"
+home_move_limit_m = 5.0
+gcs_timeout_s = 5.0
+on_gps_anomaly = "LAND"       # LAND | RTL | BRAKE | NONE  (RTL trusts GPS - avoid when GPS is suspect)
+on_home_changed = "LAND"
+on_gcs_lost = "NONE"          # firmware FS_GCS_ENABLE already handles link loss

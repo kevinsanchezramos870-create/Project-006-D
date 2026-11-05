@@ -1,0 +1,109 @@
+# Project 006-D baseline parameters - 0.5 lb payload, 7" props, 4S, Matek H7A3-SLIM
+#
+# Firmware: ArduCopter 4.7.x stable, board target "MatekH7A3".
+#   (Using a Matek H743-SLIM instead? See the port table in docs/BUILD_GUIDE.md 5.3.)
+#   Every name below was checked against the official 4.7.1 parameter list.
+#   ArduCopter 4.6.x uses older names and some different UNITS (cm vs m) - see the
+#   table in docs/BUILD_GUIDE.md section 5.3 before loading this on 4.6.
+#
+# Load: Mission Planner > Config > Full Parameter List > Load from file > Write Params
+#       (or MAVProxy: param load ardupilot_0.5lb_7in_4S.param)
+# Some parameters only exist after their *_ENABLE is set and the board reboots,
+# so: load, write, reboot, load again, write again.
+#
+# Tuning (filters, PIDs, MOT_THST_EXPO) is NOT in this file on purpose. Run
+# Mission Planner > Config > "Initial Tuning Parameters" with prop = 7 in, 4S,
+# then AUTOTUNE once the drone hovers well (see the guide, section 8).
+
+# ---------------- Frame & identity ----------------
+FRAME_CLASS,1            # Quad
+FRAME_TYPE,1             # X
+MAV_SYSID,1              # CHANGE PER DRONE: 1, 2, 3 ... (= drone_id in drone.toml)
+MAV_GCS_SYSID,255        # the ground station / swarm coordinator
+
+# ---------------- Serial ports (Matek H7A3-SLIM: SERIAL1-3 have DMA) ----------------
+SERIAL1_PROTOCOL,2       # TX1/RX1 (USART1, DMA) -> Raspberry Pi Zero 2 W (MAVLink2, fast)
+SERIAL1_BAUD,921
+SERIAL2_PROTOCOL,23      # TX2/RX2 (USART2, DMA) -> ELRS receiver (CRSF) - board default
+SERIAL3_PROTOCOL,5       # TX3/RX3 (USART3, DMA) -> GPS1 (M10 + compass on SDA/SCL)
+SERIAL4_PROTOCOL,2       # TX4/RX4 (UART4)       -> SiK 915 MHz telemetry radio
+SERIAL4_BAUD,57
+SERIAL5_PROTOCOL,2       # TX5/RX5 (UART5)       -> Remote ID module (MAVLink2)
+SERIAL5_BAUD,57
+
+# ---------------- Motors / ESC (4-in-1 on outputs 1-4) ----------------
+MOT_PWM_TYPE,6           # DShot600
+SERVO_BLH_AUTO,1         # lets BLHeliSuite/ESC-Configurator talk to the ESC through the FC
+MOT_BAT_VOLT_MAX,16.8    # 4S full
+MOT_BAT_VOLT_MIN,13.2    # 4S empty under load
+
+# Throttle-based harmonic notch (removes prop vibration from the gyro).
+# After the first hover: set INS_HNTCH_REF = learned MOT_THST_HOVER and
+# INS_HNTCH_FREQ from the FFT in the log (ArduPilot "IMU notch filtering" page).
+INS_HNTCH_ENABLE,1
+INS_HNTCH_MODE,1         # throttle-based (no bidirectional DShot needed)
+INS_HNTCH_REF,0.25       # ~hover throttle fraction at 4:1 thrust-to-weight
+INS_HNTCH_FREQ,80        # Hz
+INS_HNTCH_BW,40
+
+# ---------------- Battery (4S 3000 mAh) ----------------
+BATT_MONITOR,4           # analog voltage + current: wire the ESC "Curr" pin to the FC "Curr" pad
+BATT_CAPACITY,3000
+BATT_ARM_VOLT,15.6       # refuse to arm on a half-charged pack (3.9 V/cell)
+BATT_LOW_VOLT,14.0       # 3.5 V/cell
+BATT_LOW_MAH,900         # 30 % left
+BATT_CRT_VOLT,13.2       # 3.3 V/cell
+BATT_CRT_MAH,450         # 15 % left
+BATT_FS_LOW_ACT,2        # RTL
+BATT_FS_CRT_ACT,1        # Land
+# BATT_VOLT_MULT defaults to 21.0 on this board. Set BATT_AMP_PERVLT from your
+# ESC's current-sensor scale, then calibrate both against a multimeter + watt meter.
+
+# ---------------- Failsafes ----------------
+FS_THR_ENABLE,1          # RC link lost -> RTL
+FS_GCS_ENABLE,1          # ground-station heartbeat lost -> RTL
+FS_GCS_TIMEOUT,5
+FS_EKF_ACTION,1          # bad position estimate -> Land
+FS_CRASH_CHECK,1         # disarm if it has crashed
+FS_VIBE_ENABLE,1         # high vibration -> safer altitude control
+# Leave FS_OPTIONS bit 5 ("Release Gripper") OFF - never drop cargo on a failsafe.
+
+# ---------------- Geofence (the hard outer wall) ----------------
+# The software also checks a smaller fence (100 m / 60 m) before every move,
+# so a bad mission is rejected on the ground before it reaches this wall.
+FENCE_ENABLE,1
+FENCE_TYPE,3             # bit0 max altitude + bit1 circle around home
+FENCE_RADIUS,150         # m
+FENCE_ALT_MAX,60         # m (US legal limit is 400 ft / 122 m - stay well under)
+FENCE_MARGIN,3           # m
+FENCE_ACTION,1           # RTL (or Land if RTL is not possible)
+
+# ---------------- Return to launch / rally ----------------
+RTL_ALT_M,15             # m. In a swarm give each drone its own layer: 15, 18, 21 ...
+RTL_ALT_FINAL_M,0        # land at home
+RALLY_INCL_HOME,1        # p006-emergency rally sets this to 0 when you set a rally point
+RALLY_LIMIT_KM,0.3
+LAND_SPD_MS,0.5          # m/s final descent - gentle with cargo underneath
+
+# ---------------- Guided mode (companion computer control) ----------------
+WP_SPD,5                 # m/s default horizontal speed
+GUID_TIMEOUT,3           # s: if velocity commands stop (Pi crash) the drone stops
+GUID_OPTIONS,64          # position targets use waypoint navigation (smooth paths)
+
+# ---------------- Payload release (servo on output 5) ----------------
+GRIP_ENABLE,1
+GRIP_TYPE,1              # servo
+GRIP_GRAB,1900           # PWM: hook closed - adjust to your servo/hook
+GRIP_RELEASE,1100        # PWM: hook open
+GRIP_NEUTRAL,1900        # stay closed when idle
+SERVO5_FUNCTION,28       # Gripper on S5
+
+# ---------------- Remote ID (required for US flights outside a FRIA) ----------------
+DID_ENABLE,1
+DID_MAVPORT,5            # SERIAL5 (UART5) where the Remote ID module is wired
+DID_OPTIONS,1            # bit0: block arming if Remote ID is not working
+
+# ---------------- Arming & logging ----------------
+ARMING_SKIPCHK,0         # 0 = run every pre-arm check. Never skip checks to "make it arm".
+BRD_SAFETY_DEFLT,0       # no hardware safety switch on this board
+LOG_DISARMED,0
