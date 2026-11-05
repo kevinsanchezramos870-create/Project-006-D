@@ -62,10 +62,11 @@ Then fly it in the [ArduPilot simulator](https://ardupilot.org/dev/docs/sitl-sim
 ## Roadmap
 
 - [x] Phase 1: sizing for 0.5 lb, parts list, system design, software (v2)
+- [x] Simulator verification (ArduCopter 4.7 SITL): G-code delivery mission with payload release, RTL to an emergency rally point, vision target estimate (within 1 cm of hand calculation), live view and photo, signed swarm packets (forged and replayed packets rejected), 3-drone formation patrol with layered return
 - [ ] Phase 2: frame assembly, power wiring and soldering, BEC isolation, continuity checks
 - [ ] Phase 3: ArduCopter flash, parameters, calibration, failsafe bench tests
 - [ ] Phase 4: Pi Zero 2 W setup, mavlink-router, video and tracking bench test
-- [ ] Phase 5: SITL missions, first hover, AUTOTUNE, payload ramp (100 g → 227 g), drop test
+- [ ] Phase 5: first hover, AUTOTUNE, payload ramp (100 g → 227 g), drop test
 - [ ] Phase 6: G-code missions and vision follow in the field
 - [ ] Phase 7: two-drone, then three-drone swarm
 - [ ] `cad/`: printable hook, camera mount, landing legs

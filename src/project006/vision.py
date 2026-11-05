@@ -122,8 +122,18 @@ class OpenCVCamera:
         self.size = (width, height)
         self.writer = None
         self.last = None
+        # Video files play in real time (a webcam/stream already does).
+        is_file = not str(source).isdigit() and "://" not in str(source)
+        fps = self.cap.get(cv2.CAP_PROP_FPS) or 30.0
+        self._frame_dt = 1.0 / fps if is_file else 0.0
+        self._next = time.monotonic()
 
     def read(self):
+        if self._frame_dt:
+            delay = self._next - time.monotonic()
+            if delay > 0:
+                time.sleep(delay)
+            self._next = max(self._next + self._frame_dt, time.monotonic() - self._frame_dt)
         ok, frame = self.cap.read()
         if not ok:
             return None
