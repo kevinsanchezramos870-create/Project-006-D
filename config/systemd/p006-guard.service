@@ -1,0 +1,16 @@
+[Unit]
+Description=Project 006-D onboard anomaly guard
+After=mavlink-router.service
+Wants=mavlink-router.service
+
+[Service]
+# Change "pi" / paths if your Pi user has a different name (Raspberry Pi Imager lets you pick it).
+User=pi
+WorkingDirectory=/home/pi/Project-006-D
+EnvironmentFile=-/home/pi/.config/project006/env
+ExecStart=/home/pi/p006-venv/bin/python -m project006.emergency --config config/drone.toml guard
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

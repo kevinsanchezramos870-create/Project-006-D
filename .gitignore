@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+# flight media and logs
+flights/
+*.mp4
+*.h264
+*.BIN
+*.tlog
+*.tlog.raw
+logs/
+# local secrets / per-drone config
+config/drone.toml
+.env
